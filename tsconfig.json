@@ -1,0 +1,10 @@
+{
+	"compilerOptions": {
+		"module": "NodeNext",
+		"jsx": "react",
+		"outDir": "dist",
+		"target": "es6",
+		"esModuleInterop": true
+	},
+	"include": ["source"]
+}
