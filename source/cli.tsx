@@ -1,9 +1,10 @@
 #!/usr/bin/env node
-import React from 'react';
-import {render} from 'ink';
-import meow from 'meow';
-import App from './app.js';
-import {getFiles} from './file-utils.js';
+import React from "react";
+import { render } from "ink";
+import meow from "meow";
+import App from "./app.js";
+import { getFiles } from "./file-utils.js";
+import { exec, spawn } from "child_process";
 
 const cli = meow(
 	`
@@ -21,15 +22,15 @@ const cli = meow(
 		importMeta: import.meta,
 		flags: {
 			name: {
-				type: 'string',
+				type: "string",
 			},
 		},
-	},
+	}
 );
 
-// render(<App name={'TEST'} />);
+render(<App name={"TEST"} />);
 
-const files = getFiles();
+// const files = getFiles();
 
-console.log('CLI', cli.flags.name);
+// console.log('CLI', cli.flags.name);
 // console.log('Files', files);
