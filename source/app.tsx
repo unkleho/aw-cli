@@ -51,10 +51,26 @@ export default function App({ name = "Stranger" }: Props) {
 
 					// pbcopy("Copied! " + item.label);
 
-					console.log("Test out");
-					execSync("clear");
-					execSync("npx jest"); // --watch will hang
+					// console.log("Test out");
+					// execSync("clear");
+					// execSync("npx jest"); // --watch will hang
+
+					process.on("exit", () => {
+						console.log("Exit");
+						// execSync("npx jest");
+						const child = spawn("npx", ["jest"], {
+							stdio: "inherit",
+							// shell: true,
+
+							// detached: true,
+							// stdio: "ignore",
+						});
+
+						// child.unref();
+					});
+
 					exit();
+
 					// exec("ls");
 
 					// const process = spawn("npx", ["jest"]);
