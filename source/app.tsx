@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Box, Text, useApp } from "ink";
 import SelectInput from "ink-select-input";
 import TextInput from "ink-text-input";
-import { exec, spawn, execSync } from "child_process";
+import { exec, spawn, execSync, execFile, execFileSync } from "child_process";
 
 type Props = {
 	name: string | undefined;
@@ -56,15 +56,27 @@ export default function App({ name = "Stranger" }: Props) {
 					// execSync("npx jest"); // --watch will hang
 
 					process.on("exit", () => {
+						execFileSync("echo", [item.label]);
+
+						execFile("echo", [item.label], (err, stout, sterr) => {
+							console.log(stout);
+						});
+
+						exec("echo 'fileSync'", (err, stout, sterr) => {
+							console.log(stout);
+						});
+
 						console.log("Exit");
 						// execSync("npx jest");
-						const child = spawn("npx", ["jest"], {
-							stdio: "inherit",
-							// shell: true,
+						// execFileSync("npx jest");
+						// execFile("npx jest");
+						// const child = spawn("npx", ["jest"], {
+						// 	stdio: "inherit",
+						// 	// shell: true,
 
-							// detached: true,
-							// stdio: "ignore",
-						});
+						// 	// detached: true,
+						// 	// stdio: "ignore",
+						// });
 
 						// child.unref();
 					});

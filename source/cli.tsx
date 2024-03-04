@@ -4,7 +4,7 @@ import { render } from "ink";
 import meow from "meow";
 import App from "./app.js";
 import { getFiles } from "./file-utils.js";
-import { exec, spawn } from "child_process";
+import { exec, spawn, execFile } from "child_process";
 
 const cli = meow(
 	`
