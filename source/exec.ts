@@ -1,19 +1,28 @@
-import { spawn } from "child_process";
+import { exec, execFile } from "child_process";
 
-console.log("kaho");
+// exec("npx jest", {}, (error, stdout, stderr) => {
+// 	if (error) {
+// 		console.error(`Error executing Jest: ${error}`);
+// 		return;
+// 	}
 
-// Run a command after exiting
-const childProcess = spawn("npx", ["jest", "--watch"], {
-	stdio: "inherit", // This ensures that the output of the command is displayed in the console
+// 	console.log(`Jest output:\n${stdout}`);
+// 	if (stderr) {
+// 		console.error(`Jest errors:\n${stderr}`);
+// 	}
+// });
+
+const jestExecutable = "npx";
+const jestArgs = ["jest"];
+
+execFile(jestExecutable, jestArgs, (error, stdout, stderr) => {
+	if (error) {
+		console.error(`Error executing Jest: ${error}`);
+		return;
+	}
+
+	console.log(`Jest output:\n${stdout}`);
+	if (stderr) {
+		console.error(`Jest errors:\n${stderr}`);
+	}
 });
-
-childProcess.on("exit", (code, signal) => {
-	console.log(`Command exited with code ${code} and signal ${signal}`);
-});
-
-childProcess.on("error", (err) => {
-	console.error("Failed to start command:", err);
-});
-
-// Exit the Node.js script
-process.exit();

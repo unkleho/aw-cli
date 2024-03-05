@@ -11,7 +11,8 @@
 		"build": "tsc",
 		"dev": "tsc --watch",
 		"test": "prettier --check . && xo && ava",
-		"start": "node dist/cli.js"
+		"start": "node dist/cli.js",
+		"spawn": "node dist/spawn.js"
 	},
 	"files": [
 		"dist"
