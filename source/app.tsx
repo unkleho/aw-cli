@@ -1,99 +1,53 @@
-import React, { useState } from "react";
-import { Box, Text, useApp } from "ink";
-import SelectInput from "ink-select-input";
-import TextInput from "ink-text-input";
-import { exec, spawn, execSync, execFile, execFileSync } from "child_process";
+import React, { useState } from 'react';
+import { Box, Text, useApp } from 'ink';
+import SelectInput from 'ink-select-input';
+import TextInput from 'ink-text-input';
+import { exec, spawn, execSync, execFile, execFileSync } from 'child_process';
+import path from 'path';
+import { __dirname, getAllFiles } from './file-utils.js';
+import { glob, globSync } from 'glob';
 
 type Props = {
 	name: string | undefined;
 };
 
-export default function App({ name = "Stranger" }: Props) {
+// const folderPath = path.join(__dirname, '../');
+const folderPath = '../agriwebb/agriwebb/';
+
+// const files = getAllFiles(folderPath);
+const files = globSync(folderPath + '**/*.spec.ts', {
+	ignore: [folderPath + 'node_modules/**', '**/dist/**'],
+});
+
+export default function App({ name = 'Stranger' }: Props) {
 	const { exit } = useApp();
-	const [searchValue, setSearchValue] = useState("");
+	const [searchValue, setSearchValue] = useState('');
 	const handleSelect = (item: any) => {
 		// `item` = { label: 'First', value: 'first' }
 	};
 
-	const items = [
-		{
-			label: "First",
-			value: "first",
-		},
-		{
-			label: "Second",
-			value: "second",
-		},
-		{
-			label: "Third",
-			value: "third",
-		},
-		{
-			label: "Fourth",
-			value: "fourth",
-		},
-	];
+	const items = files.map((file) => {
+		return {
+			label: file.replace(folderPath, ''),
+			value: file.replace(folderPath, ''),
+		};
+	});
 
-	const filteredItems = items.filter((item) =>
-		item.label.includes(searchValue)
-	);
+	const filteredItems = items.filter((item) => item.label.includes(searchValue)).slice(0, 5);
 
 	return (
 		<>
-			<Text>
-				Hello, <Text color="green">{name}</Text>
-			</Text>
+			<Text>Choose a file:</Text>
 			<TextInput value={searchValue} onChange={(v) => setSearchValue(v)} />
 			<SelectInput
 				items={filteredItems}
 				onSelect={(item) => {
-					// exec("ls");
-
-					// pbcopy("Copied! " + item.label);
-
-					// console.log("Test out");
-					// execSync("clear");
-					// execSync("npx jest"); // --watch will hang
-
-					process.on("exit", () => {
-						execFileSync("echo", [item.label]);
-
-						execFile("echo", [item.label], (err, stout, sterr) => {
-							console.log(stout);
-						});
-
-						exec("echo 'fileSync'", (err, stout, sterr) => {
-							console.log(stout);
-						});
-
-						console.log("Exit");
-						// execSync("npx jest");
-						// execFileSync("npx jest");
-						// execFile("npx jest");
-						// const child = spawn("npx", ["jest"], {
-						// 	stdio: "inherit",
-						// 	// shell: true,
-
-						// 	// detached: true,
-						// 	// stdio: "ignore",
-						// });
-
-						// child.unref();
+					const childProcess = spawn('npx', ['jest', '--watch'], {
+						stdio: 'inherit', // Get nice formatting
+						// detached: true, // Need this otherwise we get IO error (if process.exit() is run)
 					});
 
 					exit();
-
-					// exec("ls");
-
-					// const process = spawn("npx", ["jest"]);
-
-					// process.stdout.on("data", (output) => {
-					// 	console.log(output.toString());
-					// });
-
-					// process.stdout.on("exit", (output) => {
-					// 	console.log(output.toString());
-					// });
 				}}
 			/>
 		</>
@@ -101,7 +55,7 @@ export default function App({ name = "Stranger" }: Props) {
 }
 
 function pbcopy(data) {
-	var proc = spawn("pbcopy");
+	var proc = spawn('pbcopy');
 	proc.stdin.write(data);
 	proc.stdin.end();
 }
