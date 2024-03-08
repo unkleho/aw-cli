@@ -5,20 +5,42 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 export const __dirname = path.dirname(__filename);
 
-export function getFiles() {
-	const dirs = fs.readdirSync(
-		path.join(__dirname, '../../agriwebb/agriwebb/libs/ui-domain/common')
-	);
+/**
+ * Get NX project.json for a file within a project
+ */
+export function getNxProject(filePath: string): {
+	name: string;
+	projectType: 'library' | 'app';
+	targets: { test: { executor: '@nx/jest:jest' } };
+} {
+	// console.log('getNxProject', { filePath });
 
-	const rawProject = fs.readFileSync(
-		path.join(__dirname, '../../agriwebb/agriwebb/libs/ui-domain/common/project.json'),
-		{ encoding: 'utf-8' }
-	);
+	let projectFilePath;
+	let hasProject = false;
+	let folderPath = path.join(filePath, '../');
+	let i = 0;
 
+	while (!projectFilePath && i < 10) {
+		const files = fs.readdirSync(folderPath);
+
+		if (files.includes('project.json')) {
+			hasProject = true;
+			projectFilePath = folderPath + 'project.json';
+		} else {
+			// Go up a folder
+			folderPath = path.join(folderPath, '../');
+			i++;
+		}
+
+		// console.log({ i, files, folderPath, projectFilePath });
+	}
+
+	const rawProject = fs.readFileSync(projectFilePath, { encoding: 'utf-8' });
 	const project = JSON.parse(rawProject);
 
-	console.log(project.targets.test);
-	return dirs;
+	// console.log({ project });
+
+	return project;
 }
 
 export function getAllFiles(dirPath, filesList = []) {
@@ -42,8 +64,3 @@ export function getAllFiles(dirPath, filesList = []) {
 
 	return filesList;
 }
-
-// const folderPath = '/path/to/your/folder';
-// const allFiles = getAllFiles(folderPath);
-
-// console.log(allFiles);

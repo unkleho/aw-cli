@@ -4,58 +4,41 @@ import SelectInput from 'ink-select-input';
 import TextInput from 'ink-text-input';
 import { exec, spawn, execSync, execFile, execFileSync } from 'child_process';
 import path from 'path';
-import { __dirname, getAllFiles } from './file-utils.js';
+import { __dirname, getAllFiles, getNxProject } from './file-utils.js';
 import { glob, globSync } from 'glob';
+import { TestApp } from './test-app.js';
+import { GitApp } from './git-app.js';
 
 type Props = {
-	name: string | undefined;
+	name: AppState | undefined;
 };
 
-// const folderPath = path.join(__dirname, '../');
-const folderPath = '../agriwebb/agriwebb/';
+type AppState = 'test' | 'git';
 
-// const files = getAllFiles(folderPath);
-const files = globSync(folderPath + '**/*.spec.ts', {
-	ignore: [folderPath + 'node_modules/**', '**/dist/**'],
-});
+const items = [
+	{ label: 'test', value: 'test' },
+	{ label: 'git', value: 'git' },
+];
 
-export default function App({ name = 'Stranger' }: Props) {
-	const { exit } = useApp();
-	const [searchValue, setSearchValue] = useState('');
-	const handleSelect = (item: any) => {
-		// `item` = { label: 'First', value: 'first' }
+export default function App({ name }: Props) {
+	const [appState, setAppState] = useState<AppState>(name);
+
+	const handleSelect = (item: { label: string; value: AppState }) => {
+		setAppState(item.value);
 	};
 
-	const items = files.map((file) => {
-		return {
-			label: file.replace(folderPath, ''),
-			value: file.replace(folderPath, ''),
-		};
-	});
+	if (appState === 'test') {
+		return <TestApp />;
+	}
 
-	const filteredItems = items.filter((item) => item.label.includes(searchValue)).slice(0, 5);
+	if (appState === 'git') {
+		return <GitApp />;
+	}
 
 	return (
 		<>
-			<Text>Choose a file:</Text>
-			<TextInput value={searchValue} onChange={(v) => setSearchValue(v)} />
-			<SelectInput
-				items={filteredItems}
-				onSelect={(item) => {
-					const childProcess = spawn('npx', ['jest', '--watch'], {
-						stdio: 'inherit', // Get nice formatting
-						// detached: true, // Need this otherwise we get IO error (if process.exit() is run)
-					});
-
-					exit();
-				}}
-			/>
+			<Text>Choose an option:</Text>
+			<SelectInput items={items} onSelect={handleSelect} />
 		</>
 	);
-}
-
-function pbcopy(data) {
-	var proc = spawn('pbcopy');
-	proc.stdin.write(data);
-	proc.stdin.end();
 }
