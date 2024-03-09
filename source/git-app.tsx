@@ -30,7 +30,7 @@ export function GitApp() {
 			const { stdout: commitStdout } = await execa('git', ['commit', '-m', `"${value}"`]);
 			console.log('Commit', commitStdout);
 		} catch (error) {
-			console.log(error);
+			console.log('Error', error);
 		}
 
 		exit();
