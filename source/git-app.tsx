@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { Text, useApp } from 'ink';
 import TextInput from 'ink-text-input';
 import dashify from 'dashify';
+import { execa } from 'execa';
 import { execFile } from 'child_process';
 
 export function GitApp() {
 	const { exit } = useApp();
 	const [branchName, setBranchName] = useState<string>('');
 
-	const handleSubmit = (value: string) => {
+	const handleSubmit = async (value: string) => {
 		const pattern = /[A-Z]{3,4}-\d+\s/;
 
 		const match = value.match(pattern);
@@ -19,9 +20,10 @@ export function GitApp() {
 
 		console.log(gitBranchName, match);
 
-		execFile('git', ['checkout', '-b', gitBranchName]);
-		execFile('git', ['add', '.']);
-		execFile('git', ['commit', '-m', `"${value}"`]);
+		const {} = await execa('git', ['checkout', '-b', gitBranchName]);
+		const { stdout: addStdout } = await execa('git', ['add', '.']);
+		console.log(addStdout);
+		const {} = await execa('git', ['commit', '-m', `"${value}"`]);
 
 		exit();
 	};
