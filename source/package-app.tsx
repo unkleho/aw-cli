@@ -27,12 +27,32 @@ export function PackageApp() {
 	const [searchValue, setSearchValue] = useState('');
 
 	const handleSelect = async (item: { label: string; value: string }) => {
-		await execa('clear');
+		console.log('handleSelect', item.value);
 
-		// Not working?? Command failed with ENOENT: npm run lint
-		await execa(`npm run ${item.value}`);
+		// await execa('clear');
 
-		exit();
+		const childProcess = spawn('npm', ['run', item.value], {
+			stdio: 'inherit', // Get nice formatting
+			// detached: true, // Need this otherwise we get IO error (if process.exit() is run)
+		});
+
+		// childProcess.on('close', () => {
+		// 	console.log('close');
+		// });
+
+		// childProcess.on('exit', () => {
+		// 	console.log('exit');
+		// });
+
+		// try {
+		// 	// Not working?? Just hangs
+		// 	const { stdout, stderr, exitCode } = await execa('npm', ['run', item.value]);
+		// 	console.log(stdout, stderr, exitCode);
+		// } catch (error) {
+		// 	console.log(error);
+		// }
+
+		// exit();
 	};
 
 	const filteredItems = items.filter((item) => item.label.includes(searchValue)).slice(0, 10);
