@@ -27,7 +27,7 @@ export function GitApp() {
 			const { stdout: addStdout } = await execa('git', ['add', '.']);
 			console.log('Add', addStdout);
 
-			const { stdout: commitStdout } = await execa('git', ['commit', '-m', `"${value}"`]);
+			const { stdout: commitStdout } = await execa('git', ['commit', '-m', value]);
 			console.log('Commit', commitStdout);
 		} catch (error) {
 			console.log(error);
