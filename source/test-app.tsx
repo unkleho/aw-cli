@@ -6,27 +6,48 @@ import { exec, spawn, execSync, execFile, execFileSync } from 'child_process';
 import path from 'path';
 import { __dirname, getAllFiles, getNxProject } from './file-utils.js';
 import { glob, globSync } from 'glob';
+import { execa } from 'execa';
 
 type Props = {
 	name: string | undefined;
 };
 
-// const folderPath = '../agriwebb/agriwebb/'; // Probot
-// const folderPath = '../../agriwebb/'; // AW computer
 const folderPath = process.cwd() + '/';
 
 // console.log(folderPath);
 
-// const files = getAllFiles(folderPath);
 const files = globSync(folderPath + '**/*.spec.ts', {
 	ignore: [folderPath + 'node_modules/**', '**/dist/**'],
 }).map((file) => file.replace(folderPath, ''));
+files.reverse();
 
 export function TestApp() {
 	const { exit } = useApp();
 	const [searchValue, setSearchValue] = useState('');
-	const handleSelect = (item: any) => {
-		// `item` = { label: 'First', value: 'first' }
+	const handleSelect = async (item: { label: string; value: string }) => {
+		await execa('clear');
+
+		const filePath = path.join(folderPath, item.value);
+		const project = getNxProject(filePath);
+		const { name } = project;
+
+		const spawnArgs = [
+			'nx',
+			'run',
+			name + ':test',
+			'--watch',
+			'--testFile',
+			filePath.replace(process.cwd() + '/', ''),
+		];
+
+		// console.log(project, spawnArgs);
+
+		const childProcess = spawn('npx', spawnArgs, {
+			stdio: 'inherit', // Get nice formatting
+			// detached: true, // Need this otherwise we get IO error (if process.exit() is run)
+		});
+
+		exit();
 	};
 
 	const items = files.map((file) => {
@@ -42,34 +63,7 @@ export function TestApp() {
 		<>
 			<Text>Choose a test file:</Text>
 			<TextInput value={searchValue} onChange={(v) => setSearchValue(v)} />
-			<SelectInput
-				items={filteredItems}
-				onSelect={(item) => {
-					console.log(item);
-
-					const filePath = path.join(folderPath, item.value);
-					const project = getNxProject(filePath);
-					const { name } = project;
-
-					const spawnArgs = [
-						'nx',
-						'run',
-						name + ':test',
-						'--watch',
-						'--testFile',
-						filePath.replace(process.cwd() + '/', ''),
-					];
-
-					console.log(project, spawnArgs);
-
-					const childProcess = spawn('npx', spawnArgs, {
-						stdio: 'inherit', // Get nice formatting
-						// detached: true, // Need this otherwise we get IO error (if process.exit() is run)
-					});
-
-					exit();
-				}}
-			/>
+			<SelectInput items={filteredItems} onSelect={handleSelect} />
 		</>
 	);
 }
