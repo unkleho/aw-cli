@@ -16,8 +16,8 @@ type Props = {
 export type AppState = 'test' | 'git';
 
 const items = [
-	{ label: 'git', value: 'git' },
-	{ label: 'test', value: 'test' },
+	{ label: 'Git', value: 'git' },
+	{ label: 'Test', value: 'test' },
 ];
 
 export default function App({ state }: Props) {
