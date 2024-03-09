@@ -6,17 +6,21 @@ import { execa } from 'execa';
 import { execFile } from 'child_process';
 import SelectInput from 'ink-select-input';
 
-type GitAppState = 'create-branch' | 'something-else';
+type Props = {
+	state?: GitAppState;
+};
+
+export type GitAppState = 'create-branch' | 'something-else';
 
 const items: { label: string; value: GitAppState }[] = [
 	{ label: 'Create branch', value: 'create-branch' },
 	{ label: 'Something else', value: 'something-else' },
 ];
 
-export function GitApp() {
+export function GitApp({ state }: Props) {
 	const { exit } = useApp();
 	const [branchName, setBranchName] = useState<string>('');
-	const [gitAppState, setGitAppState] = useState<GitAppState | null>(null);
+	const [gitAppState, setGitAppState] = useState<GitAppState | null>(state);
 
 	const handleBranchSubmit = async (value: string) => {
 		const pattern = /[A-Z]{3,4}-\d+\s/;

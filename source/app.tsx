@@ -7,10 +7,11 @@ import path from 'path';
 import { __dirname, getAllFiles, getNxProject } from './file-utils.js';
 import { glob, globSync } from 'glob';
 import { TestApp } from './test-app.js';
-import { GitApp } from './git-app.js';
+import { GitApp, GitAppState } from './git-app.js';
 
 type Props = {
-	state: AppState | undefined;
+	state?: AppState;
+	gitAppState?: GitAppState;
 };
 
 export type AppState = 'test' | 'git';
@@ -20,7 +21,7 @@ const items = [
 	{ label: 'Test', value: 'test' },
 ];
 
-export default function App({ state }: Props) {
+export default function App({ state, gitAppState }: Props) {
 	const [appState, setAppState] = useState<AppState>(state);
 
 	const handleSelect = (item: { label: string; value: AppState }) => {
@@ -28,7 +29,7 @@ export default function App({ state }: Props) {
 	};
 
 	if (appState === 'git') {
-		return <GitApp />;
+		return <GitApp state={gitAppState} />;
 	}
 
 	if (appState === 'test') {

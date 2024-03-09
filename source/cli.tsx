@@ -4,11 +4,12 @@ import { render } from 'ink';
 import meow from 'meow';
 import App, { AppState } from './app.js';
 import { exec, spawn, execFile } from 'child_process';
+import { GitAppState } from './git-app.js';
 
 // const cli = meow(
 // 	`
 // 	Usage
-// 	  $ react-ink-test
+// 	  $ aw
 
 // 	Options
 // 		--name  Your name
@@ -19,14 +20,15 @@ import { exec, spawn, execFile } from 'child_process';
 // `,
 // 	{
 // 		importMeta: import.meta,
-// 		flags: {
-// 			name: {
-// 				type: 'string',
-// 			},
-// 		},
+// flags: {
+// 	name: {
+// 		type: 'string',
+// 	},
+// },
 // 	}
 // );
 
 const initialState = process.argv[2] as AppState;
+const initialGitAppState = initialState === 'git' ? (process.argv[3] as GitAppState) : null;
 
-render(<App state={initialState} />);
+render(<App state={initialState} gitAppState={initialGitAppState} />);
