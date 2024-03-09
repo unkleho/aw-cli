@@ -20,10 +20,18 @@ export function GitApp() {
 
 		console.log(gitBranchName, match);
 
-		const {} = await execa('git', ['checkout', '-b', gitBranchName]);
-		const { stdout: addStdout } = await execa('git', ['add', '.']);
-		console.log(addStdout);
-		const {} = await execa('git', ['commit', '-m', `"${value}"`]);
+		try {
+			const { stdout: chStdout } = await execa('git', ['checkout', '-b', gitBranchName]);
+			console.log('Checkout', chStdout);
+
+			const { stdout: addStdout } = await execa('git', ['add', '.']);
+			console.log('Add', addStdout);
+
+			const { stdout: commitStdout } = await execa('git', ['commit', '-m', `"${value}"`]);
+			console.log('Commit', commitStdout);
+		} catch (error) {
+			console.log(error);
+		}
 
 		exit();
 	};
