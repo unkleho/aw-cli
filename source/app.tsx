@@ -8,17 +8,19 @@ import { __dirname, getAllFiles, getNxProject } from './file-utils.js';
 import { glob, globSync } from 'glob';
 import { TestApp } from './test-app.js';
 import { GitApp, GitAppState } from './git-app.js';
+import { PackageApp } from './package-app.js';
 
 type Props = {
 	state?: AppState;
 	gitAppState?: GitAppState;
 };
 
-export type AppState = 'test' | 'git';
+export type AppState = 'test' | 'git' | 'package';
 
 const items = [
 	{ label: 'Git', value: 'git' },
 	{ label: 'Test', value: 'test' },
+	{ label: 'Package', value: 'package' },
 ];
 
 export default function App({ state, gitAppState }: Props) {
@@ -34,6 +36,10 @@ export default function App({ state, gitAppState }: Props) {
 
 	if (appState === 'test') {
 		return <TestApp />;
+	}
+
+	if (appState === 'package') {
+		return <PackageApp />;
 	}
 
 	return (

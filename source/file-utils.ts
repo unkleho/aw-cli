@@ -11,7 +11,7 @@ export const __dirname = path.dirname(__filename);
 export function getNxProject(filePath: string): {
 	name: string;
 	projectType: 'library' | 'app';
-	targets: { test: { executor: '@nx/jest:jest' } };
+	targets: { test?: { executor: '@nx/jest:jest' | '@angular-devkit/build-angular:karma' } };
 } {
 	// console.log('getNxProject', { filePath });
 

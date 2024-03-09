@@ -29,23 +29,29 @@ export function TestApp() {
 
 		const filePath = path.join(folderPath, item.value);
 		const project = getNxProject(filePath);
-		const { name } = project;
+		const { name, targets } = project;
+		const { test } = targets;
 
-		const spawnArgs = [
-			'nx',
-			'run',
-			name + ':test',
-			'--watch',
-			'--testFile',
-			filePath.replace(process.cwd() + '/', ''),
-		];
+		// console.log(project);
 
-		// console.log(project, spawnArgs);
+		const relativeFilePath = filePath.replace(process.cwd() + '/', '');
+		const baseArgs = ['nx', 'run', name + ':test'];
+		let args;
 
-		const childProcess = spawn('npx', spawnArgs, {
-			stdio: 'inherit', // Get nice formatting
-			// detached: true, // Need this otherwise we get IO error (if process.exit() is run)
-		});
+		if (test.executor === '@nx/jest:jest') {
+			args = ['--testFile', relativeFilePath, '--watch'];
+
+			console.log(args);
+		} else if (test.executor === '@angular-devkit/build-angular:karma') {
+			args = ['--include', relativeFilePath, '--watch'];
+		}
+
+		if (args) {
+			const childProcess = spawn('npx', [...baseArgs, ...args], {
+				stdio: 'inherit', // Get nice formatting
+				// detached: true, // Need this otherwise we get IO error (if process.exit() is run)
+			});
+		}
 
 		exit();
 	};
@@ -61,7 +67,7 @@ export function TestApp() {
 
 	return (
 		<>
-			<Text>Choose a test file:</Text>
+			<Text color={'yellow'}>Choose a test file:</Text>
 			<TextInput value={searchValue} onChange={(v) => setSearchValue(v)} />
 			<SelectInput items={filteredItems} onSelect={handleSelect} />
 		</>
