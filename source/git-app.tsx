@@ -1,27 +1,38 @@
 import React, { useState } from 'react';
-import { Text } from 'ink';
+import { Text, useApp } from 'ink';
 import TextInput from 'ink-text-input';
 import dashify from 'dashify';
 import { execFile } from 'child_process';
 
 export function GitApp() {
+	const { exit } = useApp();
 	const [branchName, setBranchName] = useState<string>('');
+
+	const handleSubmit = (value: string) => {
+		const pattern = /[A-Z]{3,4}-\d+\s/;
+
+		const match = value.match(pattern);
+		const [prefix] = match;
+		const description = value.replace(prefix, '');
+
+		const gitBranchName = `${prefix.replace(' ', '')}-${dashify(description)}`;
+
+		console.log(gitBranchName, match);
+
+		execFile('git', ['checkout', '-b', gitBranchName]);
+		execFile('git', ['add', '.']);
+		execFile('git', ['commit', '-m', `"${value}"`]);
+
+		exit();
+	};
 
 	return (
 		<>
-			<Text>Name your branch:</Text>
+			<Text color={'yellow'}>Name your branch:</Text>
 			<TextInput
 				value={branchName}
 				onChange={(value) => setBranchName(value)}
-				onSubmit={(value) => {
-					const gitBranchName = dashify(value);
-
-					execFile('git', ['checkout', '-b', gitBranchName]);
-					execFile('git', ['add', '.']);
-					execFile('git', ['commit', '-m', `"${value}"`]);
-
-					console.log(gitBranchName);
-				}}
+				onSubmit={handleSubmit}
 			></TextInput>
 		</>
 	);

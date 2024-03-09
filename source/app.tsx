@@ -10,34 +10,34 @@ import { TestApp } from './test-app.js';
 import { GitApp } from './git-app.js';
 
 type Props = {
-	name: AppState | undefined;
+	state: AppState | undefined;
 };
 
-type AppState = 'test' | 'git';
+export type AppState = 'test' | 'git';
 
 const items = [
-	{ label: 'test', value: 'test' },
 	{ label: 'git', value: 'git' },
+	{ label: 'test', value: 'test' },
 ];
 
-export default function App({ name }: Props) {
-	const [appState, setAppState] = useState<AppState>(name);
+export default function App({ state }: Props) {
+	const [appState, setAppState] = useState<AppState>(state);
 
 	const handleSelect = (item: { label: string; value: AppState }) => {
 		setAppState(item.value);
 	};
 
-	if (appState === 'test') {
-		return <TestApp />;
-	}
-
 	if (appState === 'git') {
 		return <GitApp />;
 	}
 
+	if (appState === 'test') {
+		return <TestApp />;
+	}
+
 	return (
 		<>
-			<Text>Choose an option:</Text>
+			<Text color={'yellow'}>Choose an option:</Text>
 			<SelectInput items={items} onSelect={handleSelect} />
 		</>
 	);

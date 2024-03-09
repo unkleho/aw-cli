@@ -2,7 +2,7 @@
 import React from 'react';
 import { render } from 'ink';
 import meow from 'meow';
-import App from './app.js';
+import App, { AppState } from './app.js';
 import { exec, spawn, execFile } from 'child_process';
 
 const cli = meow(
@@ -27,7 +27,9 @@ const cli = meow(
 	}
 );
 
-render(<App name={null} />);
+const initialState = process.argv[2] as AppState;
+
+render(<App state={initialState} />);
 
 // const files = getFiles();
 
