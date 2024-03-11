@@ -1,30 +1,28 @@
-import React, { useState } from 'react';
-import { Box, Text, useApp } from 'ink';
+import React, { useMemo, useState } from 'react';
+import { Text, useApp } from 'ink';
 import SelectInput from 'ink-select-input';
 import TextInput from 'ink-text-input';
-import { exec, spawn, execSync, execFile, execFileSync } from 'child_process';
+import { spawn } from 'child_process';
 import path from 'path';
-import { __dirname, getAllFiles, getNxProject } from './file-utils.js';
-import { glob, globSync } from 'glob';
-import { execa } from 'execa';
 import fs from 'fs';
 
-type Props = {
-	name: string | undefined;
-};
+function getScripts() {
+	const folderPath = process.cwd() + '/';
+	const rawPkg = fs.readFileSync(folderPath + 'package.json', { encoding: 'utf-8' });
+	const pkg = rawPkg ? JSON.parse(rawPkg) : null;
+	const items = pkg?.scripts
+		? Object.entries(pkg.scripts).map(([key, value]) => ({ label: key, value: key }))
+		: [];
 
-const folderPath = process.cwd() + '/';
-const rawPkg = fs.readFileSync(folderPath + 'package.json', { encoding: 'utf-8' });
-const pkg = rawPkg ? JSON.parse(rawPkg) : null;
-const items = pkg?.scripts
-	? Object.entries(pkg.scripts).map(([key, value]) => ({ label: key, value: key }))
-	: [];
+	return items;
+}
 
 // console.log(items);
 
 export function PackageApp() {
 	const { exit } = useApp();
 	const [searchValue, setSearchValue] = useState('');
+	const items = useMemo(() => getScripts(), []);
 
 	const handleSelect = async (item: { label: string; value: string }) => {
 		console.log('handleSelect', item.value);

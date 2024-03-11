@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Box, Text, useApp } from 'ink';
 import SelectInput from 'ink-select-input';
 import TextInput from 'ink-text-input';
@@ -8,22 +8,23 @@ import { __dirname, getAllFiles, getNxProject } from './file-utils.js';
 import { glob, globSync } from 'glob';
 import { execa } from 'execa';
 
-type Props = {
-	name: string | undefined;
-};
-
 const folderPath = process.cwd() + '/';
 
 // console.log(folderPath);
+function getFiles() {
+	const files = globSync(folderPath + '**/*.spec.ts', {
+		ignore: [folderPath + 'node_modules/**', '**/dist/**'],
+	}).map((file) => file.replace(folderPath, ''));
+	files.reverse();
 
-const files = globSync(folderPath + '**/*.spec.ts', {
-	ignore: [folderPath + 'node_modules/**', '**/dist/**'],
-}).map((file) => file.replace(folderPath, ''));
-files.reverse();
+	return files;
+}
 
 export function TestApp() {
 	const { exit } = useApp();
 	const [searchValue, setSearchValue] = useState('');
+	const files = useMemo(() => getFiles(), []);
+
 	const handleSelect = async (item: { label: string; value: string }) => {
 		await execa('clear');
 

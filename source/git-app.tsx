@@ -31,32 +31,33 @@ export function GitApp({ state }: Props) {
 
 		if (!match) {
 			setError('missing-jira-code');
-			// console.log('Start your branch name with a Jira issue code eg. FMS-420');
 
 			return;
 		}
+
+		setError(null);
 
 		const [prefix] = match;
 		const description = value.replace(prefix, '');
 
 		const gitBranchName = `${prefix.replace(' ', '')}-${dashify(description)}`;
 
-		console.log(gitBranchName, match);
+		// console.log(gitBranchName, match);
 
-		// try {
-		// 	const { stdout: chStdout } = await execa('git', ['checkout', '-b', gitBranchName]);
-		// 	console.log('Checkout', chStdout);
+		try {
+			const { stdout: chStdout } = await execa('git', ['checkout', '-b', gitBranchName]);
+			console.log('Checkout', chStdout);
 
-		// 	const { stdout: addStdout } = await execa('git', ['add', '.']);
-		// 	console.log('Add', addStdout);
+			const { stdout: addStdout } = await execa('git', ['add', '.']);
+			console.log('Add', addStdout);
 
-		// 	const { stdout: commitStdout } = await execa('git', ['commit', '-m', value]);
-		// 	console.log('Commit', commitStdout);
-		// } catch (error) {
-		// 	console.log(error);
-		// }
+			const { stdout: commitStdout } = await execa('git', ['commit', '-m', value]);
+			console.log('Commit', commitStdout);
+		} catch (error) {
+			console.log(error);
+		}
 
-		// exit();
+		exit();
 	};
 
 	if (!gitAppState) {
