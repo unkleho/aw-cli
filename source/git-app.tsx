@@ -21,11 +21,21 @@ export function GitApp({ state }: Props) {
 	const { exit } = useApp();
 	const [branchName, setBranchName] = useState<string>('');
 	const [gitAppState, setGitAppState] = useState<GitAppState | null>(state);
+	const [error, setError] = useState<'missing-jira-code' | undefined>();
 
 	const handleBranchSubmit = async (value: string) => {
+		// eg. FMS-420
 		const pattern = /[A-Z]{3,4}-\d+\s/;
 
 		const match = value.match(pattern);
+
+		if (!match) {
+			setError('missing-jira-code');
+			// console.log('Start your branch name with a Jira issue code eg. FMS-420');
+
+			return;
+		}
+
 		const [prefix] = match;
 		const description = value.replace(prefix, '');
 
@@ -33,20 +43,20 @@ export function GitApp({ state }: Props) {
 
 		console.log(gitBranchName, match);
 
-		try {
-			const { stdout: chStdout } = await execa('git', ['checkout', '-b', gitBranchName]);
-			console.log('Checkout', chStdout);
+		// try {
+		// 	const { stdout: chStdout } = await execa('git', ['checkout', '-b', gitBranchName]);
+		// 	console.log('Checkout', chStdout);
 
-			const { stdout: addStdout } = await execa('git', ['add', '.']);
-			console.log('Add', addStdout);
+		// 	const { stdout: addStdout } = await execa('git', ['add', '.']);
+		// 	console.log('Add', addStdout);
 
-			const { stdout: commitStdout } = await execa('git', ['commit', '-m', value]);
-			console.log('Commit', commitStdout);
-		} catch (error) {
-			console.log(error);
-		}
+		// 	const { stdout: commitStdout } = await execa('git', ['commit', '-m', value]);
+		// 	console.log('Commit', commitStdout);
+		// } catch (error) {
+		// 	console.log(error);
+		// }
 
-		exit();
+		// exit();
 	};
 
 	if (!gitAppState) {
@@ -61,16 +71,22 @@ export function GitApp({ state }: Props) {
 	if (gitAppState === 'create-branch') {
 		return (
 			<>
-				<Box borderColor={'green'}>
-					<Text color={'yellow'}>
-						Name your branch <Text color={'gray'}>(eg. FMS-420 My branch name)</Text>:
-					</Text>
-				</Box>
+				<Text color={'yellow'}>
+					Name your branch <Text color={'grey'}>(eg. FMS-420 My branch name)</Text>:
+				</Text>
+
 				<TextInput
 					value={branchName}
 					onChange={(value) => setBranchName(value)}
 					onSubmit={handleBranchSubmit}
 				></TextInput>
+
+				{error === 'missing-jira-code' && (
+					<Text>
+						<Text color={'red'}>Your branch name should start with a Jira issue code</Text>{' '}
+						<Text color={'grey'}>(eg. FMS-420)</Text>
+					</Text>
+				)}
 			</>
 		);
 	}
