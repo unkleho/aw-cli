@@ -6,6 +6,11 @@ import App, { AppState } from './app.js';
 import { exec, spawn, execFile } from 'child_process';
 import { GitAppState } from './git-app.js';
 
+const initialState = process.argv[2] as AppState;
+const initialGitAppState = initialState === 'git' ? (process.argv[3] as GitAppState) : null;
+
+render(<App state={initialState} gitAppState={initialGitAppState} />);
+
 // const cli = meow(
 // 	`
 // 	Usage
@@ -27,8 +32,3 @@ import { GitAppState } from './git-app.js';
 // },
 // 	}
 // );
-
-const initialState = process.argv[2] as AppState;
-const initialGitAppState = initialState === 'git' ? (process.argv[3] as GitAppState) : null;
-
-render(<App state={initialState} gitAppState={initialGitAppState} />);

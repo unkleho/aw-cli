@@ -10,6 +10,7 @@ function getScripts() {
 	const folderPath = process.cwd() + '/';
 	const rawPkg = fs.readFileSync(folderPath + 'package.json', { encoding: 'utf-8' });
 	const pkg = rawPkg ? JSON.parse(rawPkg) : null;
+
 	const items = pkg?.scripts
 		? Object.entries(pkg.scripts).map(([key, value]) => ({ label: key, value: key }))
 		: [];

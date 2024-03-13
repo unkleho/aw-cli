@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Text, useApp } from 'ink';
+import { Box, Newline, Text, useApp } from 'ink';
 import SelectInput from 'ink-select-input';
 import TextInput from 'ink-text-input';
 import { exec, spawn, execSync, execFile, execFileSync } from 'child_process';
@@ -9,6 +9,7 @@ import { glob, globSync } from 'glob';
 import { TestApp } from './test-app.js';
 import { GitApp, GitAppState } from './git-app.js';
 import { PackageApp } from './package-app.js';
+import { AwLogo } from './aw-logo.js';
 
 type Props = {
 	state?: AppState;
@@ -44,6 +45,7 @@ export default function App({ state, gitAppState }: Props) {
 
 	return (
 		<>
+			{/* <AwLogo /> */}
 			<Text color={'yellow'}>Choose an option:</Text>
 			<SelectInput items={items} onSelect={handleSelect} />
 		</>

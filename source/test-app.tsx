@@ -10,7 +10,6 @@ import { execa } from 'execa';
 
 const folderPath = process.cwd() + '/';
 
-// console.log(folderPath);
 function getFiles() {
 	const files = globSync(folderPath + '**/*.spec.ts', {
 		ignore: [folderPath + 'node_modules/**', '**/dist/**'],
@@ -42,7 +41,7 @@ export function TestApp() {
 		if (test.executor === '@nx/jest:jest') {
 			args = ['--testFile', relativeFilePath, '--watch'];
 
-			console.log(args);
+			// console.log(args);
 		} else if (test.executor === '@angular-devkit/build-angular:karma') {
 			args = ['--include', relativeFilePath, '--watch'];
 		}

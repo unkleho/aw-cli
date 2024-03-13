@@ -3,7 +3,6 @@ import { Box, Text, useApp } from 'ink';
 import TextInput from 'ink-text-input';
 import dashify from 'dashify';
 import { execa } from 'execa';
-import { execFile } from 'child_process';
 import SelectInput from 'ink-select-input';
 
 type Props = {
@@ -17,6 +16,8 @@ const items: { label: string; value: GitAppState }[] = [
 	{ label: 'Something else', value: 'something-else' },
 ];
 
+const greenConsoleColour = '\x1b[32m%s\x1b[0m';
+
 export function GitApp({ state }: Props) {
 	const { exit } = useApp();
 	const [branchName, setBranchName] = useState<string>('');
@@ -25,8 +26,7 @@ export function GitApp({ state }: Props) {
 
 	const handleBranchSubmit = async (value: string) => {
 		// eg. FMS-420
-		const pattern = /[A-Z]{3,4}-\d+\s/;
-
+		const pattern = /[A-Z]{2,5}-\d+\s/;
 		const match = value.match(pattern);
 
 		if (!match) {
@@ -46,13 +46,13 @@ export function GitApp({ state }: Props) {
 
 		try {
 			const { stdout: chStdout } = await execa('git', ['checkout', '-b', gitBranchName]);
-			console.log('Checkout', chStdout);
+			console.log(greenConsoleColour, 'Checkout...', chStdout);
 
 			const { stdout: addStdout } = await execa('git', ['add', '.']);
-			console.log('Add', addStdout);
+			console.log(greenConsoleColour, 'Add...', addStdout);
 
 			const { stdout: commitStdout } = await execa('git', ['commit', '-m', value]);
-			console.log('Commit', commitStdout);
+			console.log(greenConsoleColour, 'Commit...', commitStdout);
 		} catch (error) {
 			console.log(error);
 		}

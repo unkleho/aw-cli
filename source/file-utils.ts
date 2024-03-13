@@ -13,10 +13,7 @@ export function getNxProject(filePath: string): {
 	projectType: 'library' | 'app';
 	targets: { test?: { executor: '@nx/jest:jest' | '@angular-devkit/build-angular:karma' } };
 } {
-	// console.log('getNxProject', { filePath });
-
 	let projectFilePath;
-	let hasProject = false;
 	let folderPath = path.join(filePath, '../');
 	let i = 0;
 
@@ -24,7 +21,6 @@ export function getNxProject(filePath: string): {
 		const files = fs.readdirSync(folderPath);
 
 		if (files.includes('project.json')) {
-			hasProject = true;
 			projectFilePath = folderPath + 'project.json';
 		} else {
 			// Go up a folder
@@ -37,8 +33,6 @@ export function getNxProject(filePath: string): {
 
 	const rawProject = fs.readFileSync(projectFilePath, { encoding: 'utf-8' });
 	const project = JSON.parse(rawProject);
-
-	// console.log({ project });
 
 	return project;
 }
