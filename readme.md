@@ -1,4 +1,4 @@
-# AW CLI
+# AWesome CLI
 
 ## Install
 
