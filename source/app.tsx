@@ -10,6 +10,7 @@ import { AwLogo } from './aw-logo.js';
 type Props = {
   state?: AppState;
   gitAppState?: GitAppState;
+  testAppState?: string;
 };
 
 export type AppState = 'test' | 'git' | 'package';
@@ -20,7 +21,7 @@ const items = [
   // { label: 'Package', value: 'package' }, // WIP
 ];
 
-export default function App({ state, gitAppState }: Props) {
+export default function App({ state, gitAppState, testAppState }: Props) {
   const [appState, setAppState] = useState<AppState>(state);
 
   const handleSelect = (item: { label: string; value: AppState }) => {
@@ -32,7 +33,7 @@ export default function App({ state, gitAppState }: Props) {
   }
 
   if (appState === 'test') {
-    return <TestApp />;
+    return <TestApp defaultSearchValue={testAppState} />;
   }
 
   if (appState === 'package') {

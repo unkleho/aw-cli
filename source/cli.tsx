@@ -8,8 +8,11 @@ import { GitAppState } from './git-app.js';
 
 const initialState = process.argv[2] as AppState;
 const initialGitAppState = initialState === 'git' ? (process.argv[3] as GitAppState) : null;
+const initialTestAppState = initialState === 'test' ? (process.argv[3] as string) : '';
 
-render(<App state={initialState} gitAppState={initialGitAppState} />);
+render(
+  <App state={initialState} gitAppState={initialGitAppState} testAppState={initialTestAppState} />
+);
 
 // const cli = meow(
 // 	`
