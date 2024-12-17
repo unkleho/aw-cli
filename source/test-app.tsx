@@ -23,8 +23,10 @@ export function TestApp({ defaultSearchValue = '' }) {
   const { exit } = useApp();
   const [searchValue, setSearchValue] = useState(defaultSearchValue);
   const files = useMemo(() => getFiles(), []);
+  const [state, setState] = useState<'select' | 'test'>('select');
 
   const handleSelect = async (item: { label: string; value: string }) => {
+    setState('test');
     await execa('clear');
 
     const filePath = path.join(folderPath, item.value);
@@ -64,6 +66,20 @@ export function TestApp({ defaultSearchValue = '' }) {
   });
 
   const filteredItems = items.filter((item) => item.label.includes(searchValue)).slice(0, 5);
+
+  if (filteredItems.length === 1 && defaultSearchValue && state === 'select') {
+    const item = filteredItems[0];
+    handleSelect(item);
+  }
+
+  if (state === 'test') {
+    return (
+      <>
+        <Text color={'white'}>Running test file:</Text>
+        <Text color={'yellow'}>{filteredItems[0].value}</Text>
+      </>
+    );
+  }
 
   return (
     <>

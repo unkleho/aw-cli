@@ -54,8 +54,6 @@ export function GitApp({ state }: Props) {
 
     const gitBranch = `${jiraCode}-${dashify(branchName)}`;
 
-    // const gitBranchName = `${prefix.replace(' ', '')}-${dashify(description)}`;
-
     // console.log(gitBranchName);
 
     try {
