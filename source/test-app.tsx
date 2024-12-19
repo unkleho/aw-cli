@@ -1,12 +1,13 @@
-import React, { useMemo, useState } from 'react';
-import { Box, Text, useApp } from 'ink';
+import { spawn } from 'child_process';
+import { execa } from 'execa';
+import Fuse from 'fuse.js';
+import { globSync } from 'glob';
+import { Text, useApp } from 'ink';
 import SelectInput from 'ink-select-input';
 import TextInput from 'ink-text-input';
-import { spawn } from 'child_process';
 import path from 'path';
-import { __dirname, getNxProject } from './file-utils.js';
-import { globSync } from 'glob';
-import { execa } from 'execa';
+import React, { useMemo, useState } from 'react';
+import { getNxProject } from './file-utils.js';
 
 const folderPath = process.cwd() + '/';
 
@@ -23,6 +24,7 @@ export function TestApp({ defaultSearchValue = '' }) {
   const { exit } = useApp();
   const [searchValue, setSearchValue] = useState(defaultSearchValue);
   const files = useMemo(() => getFiles(), []);
+  const filesFuse = useMemo(() => new Fuse(files), [files])
   const [state, setState] = useState<'select' | 'test'>('select');
 
   const handleSelect = async (item: { label: string; value: string }) => {
@@ -58,14 +60,7 @@ export function TestApp({ defaultSearchValue = '' }) {
     exit();
   };
 
-  const items = files.map((file) => {
-    return {
-      label: file,
-      value: file,
-    };
-  });
-
-  const filteredItems = items.filter((item) => item.label.includes(searchValue)).slice(0, 5);
+  const filteredItems = filesFuse.search(searchValue).map(value => ({ label: value.item, value: value.item }))
 
   if (filteredItems.length === 1 && defaultSearchValue && state === 'select') {
     const item = filteredItems[0];
