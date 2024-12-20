@@ -24,7 +24,7 @@ export function TestApp({ defaultSearchValue = '' }) {
   const { exit } = useApp();
   const [searchValue, setSearchValue] = useState(defaultSearchValue);
   const files = useMemo(() => getFiles(), []);
-  const filesFuse = useMemo(() => new Fuse(files), [files])
+  const filesFuse = useMemo(() => new Fuse(files), [files]);
   const [state, setState] = useState<'select' | 'test'>('select');
 
   const handleSelect = async (item: { label: string; value: string }) => {
@@ -60,7 +60,10 @@ export function TestApp({ defaultSearchValue = '' }) {
     exit();
   };
 
-  const filteredItems = filesFuse.search(searchValue).map(value => ({ label: value.item, value: value.item }))
+  const filteredItems = filesFuse
+    .search(searchValue)
+    .map((value) => ({ label: value.item, value: value.item }))
+    .slice(0, 5);
 
   if (filteredItems.length === 1 && defaultSearchValue && state === 'select') {
     const item = filteredItems[0];
