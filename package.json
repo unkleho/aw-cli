@@ -21,6 +21,7 @@
 	"dependencies": {
 		"dashify": "^2.0.0",
 		"execa": "^8.0.1",
+		"fuse.js": "^7.0.0",
 		"glob": "^10.3.10",
 		"ink": "^4.4.1",
 		"ink-autocomplete": "^0.0.0",
