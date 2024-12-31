@@ -50,9 +50,13 @@ export function GitApp({ state }: Props) {
     // const [prefix] = match;
     // const description = value.replace(prefix, '');
 
-    const gitBranchMessage = `${issueType}(${project}): ${jiraCode} ${branchName}`;
+    const hasJiraCode = jiraCode !== '' && jiraCode !== 'NA' && jiraCode !== 'na';
 
-    const gitBranch = `${jiraCode}-${dashify(branchName)}`;
+    const jiraCodeMessage = hasJiraCode ? jiraCode : '[NA]';
+
+    const gitBranchMessage = `${issueType}(${project}): ${jiraCodeMessage} ${branchName}`;
+
+    const gitBranch = `${hasJiraCode ? `${jiraCode}-` : ''}${dashify(branchName)}`;
 
     // console.log(gitBranchName);
 
