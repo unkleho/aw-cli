@@ -42,7 +42,7 @@ export function TestApp({ defaultSearchValue = '' }) {
     const baseArgs = ['nx', 'run', name + ':test'];
     let args;
 
-    if (test.executor === '@nx/jest:jest') {
+    if (test.executor === '@nx/jest:jest' || test.executor === '@analogjs/vitest-angular:test') {
       args = ['--testFile', relativeFilePath, '--watch'];
 
       // console.log(args);

@@ -9,52 +9,59 @@ export const __dirname = path.dirname(__filename);
  * Get NX project.json for a file within a project
  */
 export function getNxProject(filePath: string): {
-	name: string;
-	projectType: 'library' | 'app';
-	targets: { test?: { executor: '@nx/jest:jest' | '@angular-devkit/build-angular:karma' } };
+  name: string;
+  projectType: 'library' | 'app';
+  targets: {
+    test?: {
+      executor:
+        | '@nx/jest:jest'
+        | '@angular-devkit/build-angular:karma'
+        | '@analogjs/vitest-angular:test';
+    };
+  };
 } {
-	let projectFilePath;
-	let folderPath = path.join(filePath, '../');
-	let i = 0;
+  let projectFilePath;
+  let folderPath = path.join(filePath, '../');
+  let i = 0;
 
-	while (!projectFilePath && i < 10) {
-		const files = fs.readdirSync(folderPath);
+  while (!projectFilePath && i < 10) {
+    const files = fs.readdirSync(folderPath);
 
-		if (files.includes('project.json')) {
-			projectFilePath = folderPath + 'project.json';
-		} else {
-			// Go up a folder
-			folderPath = path.join(folderPath, '../');
-			i++;
-		}
+    if (files.includes('project.json')) {
+      projectFilePath = folderPath + 'project.json';
+    } else {
+      // Go up a folder
+      folderPath = path.join(folderPath, '../');
+      i++;
+    }
 
-		// console.log({ i, files, folderPath, projectFilePath });
-	}
+    // console.log({ i, files, folderPath, projectFilePath });
+  }
 
-	const rawProject = fs.readFileSync(projectFilePath, { encoding: 'utf-8' });
-	const project = JSON.parse(rawProject);
+  const rawProject = fs.readFileSync(projectFilePath, { encoding: 'utf-8' });
+  const project = JSON.parse(rawProject);
 
-	return project;
+  return project;
 }
 
 export function getAllFiles(dirPath, filesList = []) {
-	filesList = filesList || [];
+  filesList = filesList || [];
 
-	const files = fs.readdirSync(dirPath);
+  const files = fs.readdirSync(dirPath);
 
-	files.forEach(function (file) {
-		if (['node_modules', '.git', 'dist'].includes(file)) {
-			return;
-		}
+  files.forEach(function (file) {
+    if (['node_modules', '.git', 'dist'].includes(file)) {
+      return;
+    }
 
-		const filePath = path.join(dirPath, file);
+    const filePath = path.join(dirPath, file);
 
-		if (fs.statSync(filePath).isDirectory()) {
-			getAllFiles(filePath, filesList);
-		} else {
-			filesList.push(filePath);
-		}
-	});
+    if (fs.statSync(filePath).isDirectory()) {
+      getAllFiles(filePath, filesList);
+    } else {
+      filesList.push(filePath);
+    }
+  });
 
-	return filesList;
+  return filesList;
 }
