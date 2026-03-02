@@ -33,25 +33,27 @@ export function TestApp({ defaultSearchValue = '' }) {
 
     const filePath = path.join(folderPath, item.value);
     const project = getNxProject(filePath);
-    const { name, targets } = project;
+    const { name, targets, sourceRoot } = project;
     const { test } = targets;
 
     // console.log(project);
 
     const relativeFilePath = filePath.replace(process.cwd() + '/', '');
-    const baseArgs = ['nx', 'run', name + ':test'];
     let args;
 
-    if (test.executor === '@nx/jest:jest' || test.executor === '@analogjs/vitest-angular:test') {
-      args = ['--testFile', relativeFilePath, '--watch'];
-
-      // console.log(args);
-    } else if (test.executor === '@angular-devkit/build-angular:karma') {
-      args = ['--include', relativeFilePath, '--watch'];
+    if (test.executor === '@nx/jest:jest') {
+      args = ['nx', 'run', name + ':test', '--testFile', relativeFilePath, '--watch'];
+    } else if (test.executor === '@analogjs/vitest-angular:test') {
+      args = [
+        'vitest',
+        '--root',
+        sourceRoot.replace('/src', ''),
+        relativeFilePath.replace(sourceRoot, '').replace('/', ''),
+      ];
     }
 
     if (args) {
-      const childProcess = spawn('npx', [...baseArgs, ...args], {
+      const childProcess = spawn('npx', args, {
         stdio: 'inherit', // Get nice formatting
         // detached: true, // Need this otherwise we get IO error (if process.exit() is run)
       });

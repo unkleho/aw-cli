@@ -11,6 +11,7 @@ export const __dirname = path.dirname(__filename);
 export function getNxProject(filePath: string): {
   name: string;
   projectType: 'library' | 'app';
+  sourceRoot: string;
   targets: {
     test?: {
       executor:
