@@ -6,7 +6,30 @@ import { execa } from 'execa';
 import SelectInput from 'ink-select-input';
 import { loadConfig, saveConfig } from './file-utils.js';
 
-type JiraIssueData = { summary: string | null; epicName: string | null };
+type JiraIssueData = { summary: string | null; projectName: string | null };
+
+type RawJiraIssue = {
+  fields?: {
+    summary?: string;
+    customfield_10014?: string; // epic link key (classic projects)
+    parent?: { key?: string; fields?: { summary?: string } };
+  };
+};
+
+async function fetchRawJiraIssue(
+  issueKey: string,
+  credentials: string,
+  baseUrl: string
+): Promise<RawJiraIssue | null> {
+  const url = `${baseUrl}/rest/api/3/issue/${encodeURIComponent(
+    issueKey
+  )}?fields=summary,customfield_10014,parent`;
+  const response = await fetch(url, {
+    headers: { Authorization: `Basic ${credentials}`, Accept: 'application/json' },
+  });
+  if (!response.ok) return null;
+  return response.json() as Promise<RawJiraIssue>;
+}
 
 async function fetchJiraIssue(issueKey: string): Promise<JiraIssueData | null> {
   const baseUrl = process.env['JIRA_BASE_URL']; // eg. https://yourorg.atlassian.net
@@ -16,39 +39,38 @@ async function fetchJiraIssue(issueKey: string): Promise<JiraIssueData | null> {
   if (!baseUrl || !email || !apiToken) return null;
 
   const credentials = Buffer.from(`${email}:${apiToken}`).toString('base64');
-  const url = `${baseUrl}/rest/api/3/issue/${encodeURIComponent(
-    issueKey
-  )}?fields=summary,customfield_10014,parent`;
 
-  const response = await fetch(url, {
-    headers: {
-      Authorization: `Basic ${credentials}`,
-      Accept: 'application/json',
-    },
-  });
+  const issue = await fetchRawJiraIssue(issueKey, credentials, baseUrl);
+  if (!issue) return null;
 
-  if (!response.ok) return null;
+  // Determine the epic (classic: customfield_10014 key, next-gen: parent)
+  const epicKey = issue.fields?.customfield_10014 ?? issue.fields?.parent?.key ?? null;
+  const epicNameFromIssue = issue.fields?.parent?.fields?.summary ?? null;
 
-  const data = (await response.json()) as {
-    fields?: {
-      summary?: string;
-      customfield_10014?: string; // epic link key (classic projects)
-      parent?: { key?: string; fields?: { summary?: string } }; // parent/epic (next-gen projects)
-    };
-  };
+  let projectName: string | null = epicNameFromIssue;
 
-  // Next-gen: parent.fields.summary gives the epic name directly
-  let epicName = data.fields?.parent?.fields?.summary ?? null;
+  if (epicKey) {
+    const epic = await fetchRawJiraIssue(epicKey, credentials, baseUrl);
+    if (epic) {
+      // Use fetched epic name if we didn't already have it
+      if (!projectName) projectName = epic.fields?.summary ?? null;
 
-  // Classic: customfield_10014 is just the epic key, so fetch its summary
-  if (!epicName && data.fields?.customfield_10014) {
-    const epicIssue = await fetchJiraIssue(data.fields.customfield_10014);
-    epicName = epicIssue?.summary ?? null;
+      // Check if epic has a parent = initiative
+      const initiativeKey = epic.fields?.customfield_10014 ?? epic.fields?.parent?.key ?? null;
+      const initiativeNameFromEpic = epic.fields?.parent?.fields?.summary ?? null;
+
+      if (initiativeNameFromEpic) {
+        projectName = initiativeNameFromEpic;
+      } else if (initiativeKey) {
+        const initiative = await fetchRawJiraIssue(initiativeKey, credentials, baseUrl);
+        if (initiative?.fields?.summary) projectName = initiative.fields.summary;
+      }
+    }
   }
 
   return {
-    summary: data.fields?.summary ?? null,
-    epicName,
+    summary: issue.fields?.summary ?? null,
+    projectName,
   };
 }
 
@@ -82,22 +104,7 @@ export function GitApp({ state }: Props) {
   const [error, setError] = useState<'missing-jira-code' | undefined>();
   const [isFetchingJira, setIsFetchingJira] = useState<boolean>(false);
 
-  const handleJiraCodeSubmit = async () => {
-    const hasCode = jiraCode !== '' && jiraCode !== 'NA' && jiraCode !== 'na';
-    if (hasCode) {
-      setIsFetchingJira(true);
-      try {
-        const issue = await fetchJiraIssue(jiraCode);
-        if (issue?.summary) {
-          setBranchName(issue.summary);
-        }
-        if (issue?.epicName) {
-          setProject(dashify(issue.epicName));
-        }
-      } finally {
-        setIsFetchingJira(false);
-      }
-    }
+  const handleJiraCodeSubmit = () => {
     setGitAppState('create-branch.issue-type');
   };
 
@@ -175,17 +182,37 @@ export function GitApp({ state }: Props) {
   if (gitAppState === 'create-branch.issue-type') {
     return (
       <>
-        <SelectInput
-          items={[
-            { label: 'feat', value: 'feat' },
-            { label: 'chore', value: 'chore' },
-            { label: 'fix', value: 'fix' },
-          ]}
-          onSelect={(value: { label: string; value: GitIssueType }) => {
-            setIssueType(value.value);
-            setGitAppState('create-branch.project');
-          }}
-        />
+        {isFetchingJira ? (
+          <Text color={'grey'}>Fetching issue from Jira...</Text>
+        ) : (
+          <SelectInput
+            items={[
+              { label: 'feat', value: 'feat' },
+              { label: 'chore', value: 'chore' },
+              { label: 'fix', value: 'fix' },
+            ]}
+            onSelect={async (value: { label: string; value: GitIssueType }) => {
+              setIssueType(value.value);
+              const hasCode = jiraCode !== '' && jiraCode !== 'NA' && jiraCode !== 'na';
+              if (hasCode) {
+                setIsFetchingJira(true);
+                try {
+                  const issue = await fetchJiraIssue(jiraCode);
+                  if (issue?.summary) {
+                    setBranchName(issue.summary);
+                  }
+                  if (issue?.projectName) {
+                    const nameBeforeDash = issue.projectName.split('-')[0]!.trim();
+                    setProject(dashify(nameBeforeDash));
+                  }
+                } finally {
+                  setIsFetchingJira(false);
+                }
+              }
+              setGitAppState('create-branch.project');
+            }}
+          />
+        )}
       </>
     );
   }
