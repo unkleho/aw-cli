@@ -4,6 +4,53 @@ import TextInput from 'ink-text-input';
 import dashify from 'dashify';
 import { execa } from 'execa';
 import SelectInput from 'ink-select-input';
+import { loadConfig, saveConfig } from './file-utils.js';
+
+type JiraIssueData = { summary: string | null; epicName: string | null };
+
+async function fetchJiraIssue(issueKey: string): Promise<JiraIssueData | null> {
+  const baseUrl = process.env['JIRA_BASE_URL']; // eg. https://yourorg.atlassian.net
+  const email = process.env['JIRA_EMAIL'];
+  const apiToken = process.env['JIRA_API_TOKEN'];
+
+  if (!baseUrl || !email || !apiToken) return null;
+
+  const credentials = Buffer.from(`${email}:${apiToken}`).toString('base64');
+  const url = `${baseUrl}/rest/api/3/issue/${encodeURIComponent(
+    issueKey
+  )}?fields=summary,customfield_10014,parent`;
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Basic ${credentials}`,
+      Accept: 'application/json',
+    },
+  });
+
+  if (!response.ok) return null;
+
+  const data = (await response.json()) as {
+    fields?: {
+      summary?: string;
+      customfield_10014?: string; // epic link key (classic projects)
+      parent?: { key?: string; fields?: { summary?: string } }; // parent/epic (next-gen projects)
+    };
+  };
+
+  // Next-gen: parent.fields.summary gives the epic name directly
+  let epicName = data.fields?.parent?.fields?.summary ?? null;
+
+  // Classic: customfield_10014 is just the epic key, so fetch its summary
+  if (!epicName && data.fields?.customfield_10014) {
+    const epicIssue = await fetchJiraIssue(data.fields.customfield_10014);
+    epicName = epicIssue?.summary ?? null;
+  }
+
+  return {
+    summary: data.fields?.summary ?? null,
+    epicName,
+  };
+}
 
 type Props = {
   state?: GitAppState;
@@ -29,10 +76,30 @@ export function GitApp({ state }: Props) {
   const { exit } = useApp();
   const [jiraCode, setJiraCode] = useState<string>('');
   const [issueType, setIssueType] = useState<GitIssueType>('feat');
-  const [project, setProject] = useState<string>('');
+  const [project, setProject] = useState<string>(() => loadConfig().project ?? '');
   const [branchName, setBranchName] = useState<string>('');
-  const [gitAppState, setGitAppState] = useState<GitAppState | null>(state);
+  const [gitAppState, setGitAppState] = useState<GitAppState | null>(state ?? null);
   const [error, setError] = useState<'missing-jira-code' | undefined>();
+  const [isFetchingJira, setIsFetchingJira] = useState<boolean>(false);
+
+  const handleJiraCodeSubmit = async () => {
+    const hasCode = jiraCode !== '' && jiraCode !== 'NA' && jiraCode !== 'na';
+    if (hasCode) {
+      setIsFetchingJira(true);
+      try {
+        const issue = await fetchJiraIssue(jiraCode);
+        if (issue?.summary) {
+          setBranchName(issue.summary);
+        }
+        if (issue?.epicName) {
+          setProject(dashify(issue.epicName));
+        }
+      } finally {
+        setIsFetchingJira(false);
+      }
+    }
+    setGitAppState('create-branch.issue-type');
+  };
 
   const handleBranchSubmit = async (value: string) => {
     // eg. FMS-420
@@ -92,11 +159,15 @@ export function GitApp({ state }: Props) {
           Jira code <Text color={'grey'}>(eg. FMS-420)</Text>:
         </Text>
 
-        <TextInput
-          value={jiraCode}
-          onChange={(value) => setJiraCode(value)}
-          onSubmit={() => setGitAppState('create-branch.issue-type')}
-        ></TextInput>
+        {isFetchingJira ? (
+          <Text color={'grey'}>Fetching issue from Jira...</Text>
+        ) : (
+          <TextInput
+            value={jiraCode}
+            onChange={(value) => setJiraCode(value)}
+            onSubmit={handleJiraCodeSubmit}
+          ></TextInput>
+        )}
       </>
     );
   }
@@ -127,7 +198,10 @@ export function GitApp({ state }: Props) {
         <TextInput
           value={project}
           onChange={(value) => setProject(value)}
-          onSubmit={() => setGitAppState('create-branch.branch-name')}
+          onSubmit={() => {
+            saveConfig({ project });
+            setGitAppState('create-branch.branch-name');
+          }}
         ></TextInput>
       </>
     );

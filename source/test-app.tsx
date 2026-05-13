@@ -41,9 +41,9 @@ export function TestApp({ defaultSearchValue = '' }) {
     const relativeFilePath = filePath.replace(process.cwd() + '/', '');
     let args;
 
-    if (test.executor === '@nx/jest:jest') {
+    if (test?.executor === '@nx/jest:jest') {
       args = ['nx', 'run', name + ':test', '--testFile', relativeFilePath, '--watch'];
-    } else if (test.executor === '@analogjs/vitest-angular:test') {
+    } else if (test?.executor === '@analogjs/vitest-angular:test') {
       args = [
         'vitest',
         '--root',

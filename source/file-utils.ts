@@ -1,4 +1,5 @@
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -39,13 +40,37 @@ export function getNxProject(filePath: string): {
     // console.log({ i, files, folderPath, projectFilePath });
   }
 
+  if (!projectFilePath) {
+    throw new Error(`Could not find project.json for file: ${filePath}`);
+  }
+
   const rawProject = fs.readFileSync(projectFilePath, { encoding: 'utf-8' });
   const project = JSON.parse(rawProject);
 
   return project;
 }
 
-export function getAllFiles(dirPath, filesList = []) {
+const CONFIG_PATH = path.join(os.homedir(), '.aw-cli.json');
+
+export type AwCliConfig = {
+  project?: string;
+};
+
+export function loadConfig(): AwCliConfig {
+  try {
+    const raw = fs.readFileSync(CONFIG_PATH, { encoding: 'utf-8' });
+    return JSON.parse(raw) as AwCliConfig;
+  } catch {
+    return {};
+  }
+}
+
+export function saveConfig(config: AwCliConfig): void {
+  const existing = loadConfig();
+  fs.writeFileSync(CONFIG_PATH, JSON.stringify({ ...existing, ...config }, null, 2));
+}
+
+export function getAllFiles(dirPath: string, filesList: string[] = []) {
   filesList = filesList || [];
 
   const files = fs.readdirSync(dirPath);
