@@ -43,12 +43,13 @@ export function TestApp({ defaultSearchValue = '' }) {
 
     if (test?.executor === '@nx/jest:jest') {
       args = ['nx', 'run', name + ':test', '--testFile', relativeFilePath, '--watch'];
-    } else if (test?.executor === '@analogjs/vitest-angular:test') {
+    } else if (test?.executor === '@analogjs/vitest-angular:test' || '@nx/vitest:test') {
       args = [
         'vitest',
         '--root',
         sourceRoot.replace('/src', ''),
         relativeFilePath.replace(sourceRoot, '').replace('/', ''),
+        '--watch',
       ];
     }
 
