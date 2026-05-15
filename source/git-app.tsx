@@ -5,6 +5,7 @@ import dashify from 'dashify';
 import { execa } from 'execa';
 import SelectInput from 'ink-select-input';
 import { loadConfig, saveConfig } from './file-utils.js';
+import { FilterSelectInput } from './filter-select-input.js';
 
 type JiraIssueData = { summary: string | null; projectName: string | null };
 
@@ -29,6 +30,55 @@ async function fetchRawJiraIssue(
   });
   if (!response.ok) return null;
   return response.json() as Promise<RawJiraIssue>;
+}
+
+type JiraIssueListItem = { key: string; summary: string };
+
+type FetchIssuesResult = { issues: JiraIssueListItem[]; error?: string };
+
+async function fetchJiraIssuesAssignedToMe(): Promise<FetchIssuesResult> {
+  const baseUrl = process.env['JIRA_BASE_URL'];
+  const email = process.env['JIRA_EMAIL'];
+  const apiToken = process.env['JIRA_API_TOKEN'];
+
+  if (!baseUrl || !email || !apiToken) {
+    const missing = ['JIRA_BASE_URL', 'JIRA_EMAIL', 'JIRA_API_TOKEN']
+      .filter((k) => !process.env[k])
+      .join(', ');
+    return { issues: [], error: `Missing env vars: ${missing}` };
+  }
+
+  const credentials = Buffer.from(`${email}:${apiToken}`).toString('base64');
+  const url = `${baseUrl}/rest/api/3/search/jql`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${credentials}`,
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      jql: 'assignee = currentUser() AND resolution = Unresolved ORDER BY updated DESC',
+      fields: ['summary', 'key'],
+      maxResults: 20,
+    }),
+  });
+
+  if (!response.ok) {
+    return { issues: [], error: `Jira API error: ${response.status} ${response.statusText}` };
+  }
+
+  const data = (await response.json()) as {
+    issues?: Array<{ key: string; fields?: { summary?: string } }>;
+  };
+
+  return {
+    issues: (data.issues ?? []).map((issue) => ({
+      key: issue.key,
+      summary: issue.fields?.summary ?? issue.key,
+    })),
+  };
 }
 
 async function fetchJiraIssue(issueKey: string): Promise<JiraIssueData | null> {
@@ -80,6 +130,8 @@ type Props = {
 
 export type GitAppState =
   | 'create-branch'
+  | 'create-branch.jira-select'
+  | 'create-branch.manual-entry'
   | 'create-branch.issue-type'
   | 'create-branch.project'
   | 'create-branch.branch-name'
@@ -103,6 +155,9 @@ export function GitApp({ state }: Props) {
   const [gitAppState, setGitAppState] = useState<GitAppState | null>(state ?? null);
   const [error, setError] = useState<'missing-jira-code' | undefined>();
   const [isFetchingJira, setIsFetchingJira] = useState<boolean>(false);
+  const [jiraIssues, setJiraIssues] = useState<{ key: string; summary: string }[]>([]);
+  const [isFetchingIssues, setIsFetchingIssues] = useState<boolean>(false);
+  const [jiraFetchError, setJiraFetchError] = useState<string | undefined>();
 
   const handleJiraCodeSubmit = () => {
     setGitAppState('create-branch.issue-type');
@@ -154,27 +209,70 @@ export function GitApp({ state }: Props) {
     return (
       <>
         <Text color={'yellow'}>Select a Git option:</Text>
-        <SelectInput items={items} onSelect={(item) => setGitAppState(item.value)} />
+        <SelectInput
+          items={items}
+          onSelect={async (item) => {
+            if (item.value === 'create-branch') {
+              setGitAppState('create-branch');
+              setIsFetchingIssues(true);
+              try {
+                const result = await fetchJiraIssuesAssignedToMe();
+                setJiraIssues(result.issues);
+                setJiraFetchError(result.error);
+              } catch (e) {
+                setJiraFetchError(e instanceof Error ? e.message : String(e));
+              } finally {
+                setIsFetchingIssues(false);
+                setGitAppState('create-branch.jira-select');
+              }
+            } else {
+              setGitAppState(item.value);
+            }
+          }}
+        />
       </>
     );
   }
 
   if (gitAppState === 'create-branch') {
+    return <Text color={'grey'}>Fetching your Jira issues...</Text>;
+  }
+
+  if (gitAppState === 'create-branch.jira-select') {
+    const jiraSelectItems = jiraIssues.map((issue) => ({
+      label: `${issue.key}  ${issue.summary}`,
+      value: issue.key,
+    }));
+
+    return (
+      <FilterSelectInput
+        items={jiraSelectItems}
+        pinnedItems={[{ label: 'Enter manually', value: '__manual__' }]}
+        error={jiraFetchError}
+        onSelect={(key) => {
+          if (key === '__manual__') {
+            setJiraCode('');
+            setGitAppState('create-branch.manual-entry');
+          } else {
+            setJiraCode(key);
+            setGitAppState('create-branch.issue-type');
+          }
+        }}
+      />
+    );
+  }
+
+  if (gitAppState === 'create-branch.manual-entry') {
     return (
       <>
         <Text color={'yellow'}>
           Jira code <Text color={'grey'}>(eg. FMS-420)</Text>:
         </Text>
-
-        {isFetchingJira ? (
-          <Text color={'grey'}>Fetching issue from Jira...</Text>
-        ) : (
-          <TextInput
-            value={jiraCode}
-            onChange={(value) => setJiraCode(value)}
-            onSubmit={handleJiraCodeSubmit}
-          ></TextInput>
-        )}
+        <TextInput
+          value={jiraCode}
+          onChange={(value) => setJiraCode(value)}
+          onSubmit={() => setGitAppState('create-branch.issue-type')}
+        />
       </>
     );
   }
