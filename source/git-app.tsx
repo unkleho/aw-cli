@@ -59,7 +59,7 @@ async function fetchJiraIssuesAssignedToMe(): Promise<FetchIssuesResult> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      jql: 'assignee = currentUser() AND resolution = Unresolved ORDER BY updated DESC',
+      jql: 'assignee = currentUser() AND resolution = Unresolved AND status NOT IN ("On Hold", "Closed", "Done") ORDER BY updated DESC',
       fields: ['summary', 'key'],
       maxResults: 20,
     }),
@@ -158,44 +158,28 @@ export function GitApp({ state }: Props) {
   const [jiraIssues, setJiraIssues] = useState<{ key: string; summary: string }[]>([]);
   const [isFetchingIssues, setIsFetchingIssues] = useState<boolean>(false);
   const [jiraFetchError, setJiraFetchError] = useState<string | undefined>();
+  const [jiraSelectedFromList, setJiraSelectedFromList] = useState<boolean>(false);
 
   const handleJiraCodeSubmit = () => {
     setGitAppState('create-branch.issue-type');
   };
 
-  const handleBranchSubmit = async (value: string) => {
-    // eg. FMS-420
-    // const pattern = /[A-Z]{2,5}-\d+\s/;
-    // const match = value.match(pattern);
-
-    // if (!match) {
-    //   setError('missing-jira-code');
-
-    //   return;
-    // }
-
-    // setError(null);
-
-    // const [prefix] = match;
-    // const description = value.replace(prefix, '');
-
-    const hasJiraCode = jiraCode !== '' && jiraCode !== 'NA' && jiraCode !== 'na';
-
-    const jiraCodeMessage = hasJiraCode ? jiraCode : '[NA]';
-
-    const gitBranchMessage = `${issueType}(${project}): ${jiraCodeMessage} ${branchName}`;
-
-    const gitBranch = `${hasJiraCode ? `${jiraCode}-` : ''}${dashify(branchName)}`;
-
-    // console.log(gitBranchName);
+  const runGitBranch = async (opts: {
+    jiraCode: string;
+    issueType: GitIssueType;
+    project: string;
+    branchName: string;
+  }) => {
+    const hasJiraCode = opts.jiraCode !== '' && opts.jiraCode !== 'NA' && opts.jiraCode !== 'na';
+    const jiraCodeMessage = hasJiraCode ? opts.jiraCode : '[NA]';
+    const gitBranchMessage = `${opts.issueType}(${opts.project}): ${jiraCodeMessage} ${opts.branchName}`;
+    const gitBranch = `${hasJiraCode ? `${opts.jiraCode}-` : ''}${dashify(opts.branchName)}`;
 
     try {
       const { stdout: chStdout } = await execa('git', ['checkout', '-b', gitBranch]);
       console.log(greenConsoleColour, 'Checkout...', chStdout);
-
       const { stdout: addStdout } = await execa('git', ['add', '.']);
       console.log(greenConsoleColour, 'Add...', addStdout);
-
       const { stdout: commitStdout } = await execa('git', ['commit', '-m', gitBranchMessage]);
       console.log(greenConsoleColour, 'Commit...', commitStdout);
     } catch (error) {
@@ -203,6 +187,10 @@ export function GitApp({ state }: Props) {
     }
 
     exit();
+  };
+
+  const handleBranchSubmit = async (_value: string) => {
+    await runGitBranch({ jiraCode, issueType, project, branchName });
   };
 
   if (!gitAppState) {
@@ -240,7 +228,7 @@ export function GitApp({ state }: Props) {
 
   if (gitAppState === 'create-branch.jira-select') {
     const jiraSelectItems = jiraIssues.map((issue) => ({
-      label: `${issue.key}  ${issue.summary}`,
+      label: `${issue.key} ${issue.summary}`,
       value: issue.key,
     }));
 
@@ -251,9 +239,11 @@ export function GitApp({ state }: Props) {
         error={jiraFetchError}
         onSelect={(key) => {
           if (key === '__manual__') {
+            setJiraSelectedFromList(false);
             setJiraCode('');
             setGitAppState('create-branch.manual-entry');
           } else {
+            setJiraSelectedFromList(true);
             setJiraCode(key);
             setGitAppState('create-branch.issue-type');
           }
@@ -292,22 +282,34 @@ export function GitApp({ state }: Props) {
             onSelect={async (value: { label: string; value: GitIssueType }) => {
               setIssueType(value.value);
               const hasCode = jiraCode !== '' && jiraCode !== 'NA' && jiraCode !== 'na';
+              let resolvedBranchName = branchName;
+              let resolvedProject = project;
               if (hasCode) {
                 setIsFetchingJira(true);
                 try {
                   const issue = await fetchJiraIssue(jiraCode);
                   if (issue?.summary) {
+                    resolvedBranchName = issue.summary;
                     setBranchName(issue.summary);
                   }
                   if (issue?.projectName) {
-                    const nameBeforeDash = issue.projectName.split('-')[0]!.trim();
-                    setProject(dashify(nameBeforeDash));
+                    resolvedProject = dashify(issue.projectName.split('-')[0]!.trim());
+                    setProject(resolvedProject);
                   }
                 } finally {
                   setIsFetchingJira(false);
                 }
               }
-              setGitAppState('create-branch.project');
+              if (jiraSelectedFromList) {
+                await runGitBranch({
+                  jiraCode,
+                  issueType: value.value,
+                  project: resolvedProject,
+                  branchName: resolvedBranchName,
+                });
+              } else {
+                setGitAppState('create-branch.project');
+              }
             }}
           />
         )}
