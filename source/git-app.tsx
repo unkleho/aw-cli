@@ -281,11 +281,11 @@ export function GitApp({ state }: Props) {
             ]}
             onSelect={async (value: { label: string; value: GitIssueType }) => {
               setIssueType(value.value);
+              setIsFetchingJira(true);
               const hasCode = jiraCode !== '' && jiraCode !== 'NA' && jiraCode !== 'na';
               let resolvedBranchName = branchName;
               let resolvedProject = project;
               if (hasCode) {
-                setIsFetchingJira(true);
                 try {
                   const issue = await fetchJiraIssue(jiraCode);
                   if (issue?.summary) {
@@ -296,8 +296,8 @@ export function GitApp({ state }: Props) {
                     resolvedProject = dashify(issue.projectName.split('-')[0]!.trim());
                     setProject(resolvedProject);
                   }
-                } finally {
-                  setIsFetchingJira(false);
+                } catch {
+                  // continue without Jira data
                 }
               }
               if (jiraSelectedFromList) {
@@ -308,6 +308,7 @@ export function GitApp({ state }: Props) {
                   branchName: resolvedBranchName,
                 });
               } else {
+                setIsFetchingJira(false);
                 setGitAppState('create-branch.project');
               }
             }}
