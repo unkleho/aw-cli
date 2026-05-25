@@ -16,6 +16,21 @@ $ npm start
 alias aw="node /Users/path/to/aw-cli/dist/cli.js $1 $2"
 ```
 
+## Environment Variables
+
+Create a `.env` file in the project root with the following variables for Jira integration:
+
+```env
+# Jira integration
+JIRA_BASE_URL=https://your-org.atlassian.net
+JIRA_EMAIL=your-email@example.com
+JIRA_API_TOKEN=your-jira-api-token
+```
+
+- `JIRA_BASE_URL` — Your Jira instance base URL (e.g. `https://your-org.atlassian.net`)
+- `JIRA_EMAIL` — The email address associated with your Atlassian account
+- `JIRA_API_TOKEN` — API token generated from [https://id.atlassian.com/manage-profile/security/api-tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
+
 ## Usage
 
 ```zsh
