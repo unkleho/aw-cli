@@ -288,13 +288,23 @@ export function GitApp({ state }: Props) {
               let resolvedProject = project;
 
               if (jiraSelectedFromList) {
-                // Data already available from the list — no need to fetch again
+                // Summary already available from the list, but project/epic
+                // info requires a separate fetch
                 const selectedIssue = jiraIssues.find((issue) => issue.key === jiraCode);
                 if (selectedIssue?.summary) {
                   resolvedBranchName = selectedIssue.summary;
                 }
                 setIsCreatingBranch(true);
                 setIsFetchingJira(true);
+                try {
+                  const issue = await fetchJiraIssue(jiraCode);
+                  if (issue?.projectName) {
+                    resolvedProject = dashify(issue.projectName.split('-')[0]!.trim());
+                    setProject(resolvedProject);
+                  }
+                } catch {
+                  // continue without Jira data
+                }
                 await runGitBranch({
                   jiraCode,
                   issueType: value.value,
